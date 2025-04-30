@@ -1,45 +1,21 @@
 local player = game.Players.LocalPlayer
-local button = script.Parent  -- O quadrado (part) onde o jogador vai clicar
-local menu = game.Players.LocalPlayer.PlayerGui:WaitForChild("ScreenGui"):WaitForChild("Frame")  -- Menu (Frame) onde os botões estão
+local gamePassId = 12345678  -- Substitua com o ID do seu Game Pass
 
-local clickDetector = button:FindFirstChild("ClickDetector")
-
--- Função para alternar a visibilidade do menu
-local function toggleMenu()
-    menu.Visible = not menu.Visible  -- Alterna a visibilidade do menu
+-- Verifica se o jogador tem o Game Pass
+local function temGamePass()
+    return player:HasGamePass(gamePassId)
 end
 
--- Detecta o clique no quadrado
-if clickDetector then
-    clickDetector.MouseClick:Connect(toggleMenu)
-end
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
--- Função para aplicar o costume
-local function aplicarCostume(nomeCostume)
-    local player = game.Players.LocalPlayer
-    local character = player.Character or player.CharacterAdded:Wait()
-    local costume = game.ServerStorage.Costumes:FindFirstChild(nomeCostume)
-    
-    -- Limpar roupas antigas (caso já tenha algo no personagem)
-    for _, v in pairs(character:GetChildren()) do
-        if v:IsA("Accessory") or v:IsA("Shirt") or v:IsA("Pants") then
-            v:Destroy()
-        end
-    end
-    
-    -- Clonar o novo costume para o personagem
-    if costume then
-        costume:Clone().Parent = character
+-- Comprar o Game Pass (simula a compra)
+local function comprarGamePass()
+    if not temGamePass() then
+        -- Código para simular compra (se o jogador não tem)
+        print("Você não tem o Game Pass! Compra agora!")
+        -- Aqui você pode pedir para o jogador comprar o Game Pass através de uma interface de compra do Roblox
+    else
+        print("Você já tem esse Game Pass!")
     end
 end
 
--- Botões do menu para escolher o costume
-script.Parent.BtnCostume1.MouseButton1Click:Connect(function()
-    aplicarCostume("Costume1")  -- Substitua pelo nome do modelo que você criou
-end)
-
-script.Parent.BtnCostume2.MouseButton1Click:Connect(function()
-    aplicarCostume("Costume2")
-end)
-
+-- Conectar ao evento de botão (por exemplo, se houver um botão de compra no menu)
+script.Parent.MouseButton1Click:Connect(comprarGamePass)
