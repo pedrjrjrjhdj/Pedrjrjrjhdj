@@ -1,26 +1,41 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local costumeFolder = game:GetService("ServerStorage"):WaitForChild("Costumes")
 
-local SetCostume = Instance.new("RemoteEvent", ReplicatedStorage)
-SetCostume.Name = "SetCostume"
+local function escolherCostume(nome)
+	ReplicatedStorage:SetCostume:FireServer(nome)
+	script.Parent.Enabled = false -- fecha o menu
+end
+
+script.Parent.Frame.BtnBlueLock1.MouseButton1Click:Connect(function()
+	escolherCostume("BlueLock1")
+end)
+
+script.Parent.Frame.BtnBlueLock2.MouseButton1Click:Connect(function()
+	escolherCostume("BlueLock2")
+end)
+
+script.Parent.Frame.BtnBlueLock3.MouseButton1Click:Connect(function()
+	escolherCostume("BlueLock3")
+end)
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local ServerStorage = game:GetService("ServerStorage")
 
 local playerCostumes = {}
 
-SetCostume.OnServerEvent:Connect(function(player, costumeName)
-    playerCostumes[player] = costumeName
+ReplicatedStorage.SetCostume.OnServerEvent:Connect(function(player, costumeName)
+	playerCostumes[player] = costumeName
 end)
 
 game.Players.PlayerAdded:Connect(function(player)
-    player.CharacterAdded:Connect(function(char)
-        task.wait(0.1)
-        local costumeName = playerCostumes[player]
-        if costumeName then
-            local costume = costumeFolder:FindFirstChild(costumeName)
-            if costume then
-                for _, item in ipairs(costume:GetChildren()) do
-                    item:Clone().Parent = char
-                end
-            end
-        end
-    end)
+	player.CharacterAdded:Connect(function(character)
+		task.wait(0.1)
+		local costumeName = playerCostumes[player]
+		if costumeName then
+			local costume = ServerStorage.Costumes:FindFirstChild(costumeName)
+			if costume then
+				for _, item in pairs(costume:GetChildren()) do
+					item:Clone().Parent = character
+				end
+			end
+		end
+	end)
 end)
