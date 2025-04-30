@@ -1,0 +1,26 @@
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local costumeFolder = game:GetService("ServerStorage"):WaitForChild("Costumes")
+
+local SetCostume = Instance.new("RemoteEvent", ReplicatedStorage)
+SetCostume.Name = "SetCostume"
+
+local playerCostumes = {}
+
+SetCostume.OnServerEvent:Connect(function(player, costumeName)
+    playerCostumes[player] = costumeName
+end)
+
+game.Players.PlayerAdded:Connect(function(player)
+    player.CharacterAdded:Connect(function(char)
+        task.wait(0.1)
+        local costumeName = playerCostumes[player]
+        if costumeName then
+            local costume = costumeFolder:FindFirstChild(costumeName)
+            if costume then
+                for _, item in ipairs(costume:GetChildren()) do
+                    item:Clone().Parent = char
+                end
+            end
+        end
+    end)
+end)
