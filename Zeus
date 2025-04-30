@@ -8,7 +8,7 @@ end
 
 -- Comprar o Game Pass (simula a compra)
 local function comprarGamePass()
-    if not temGamePass() then
+    if not temGamePass) then
         -- Código para simular compra (se o jogador não tem)
         print("Você não tem o Game Pass! Compra agora!")
         -- Aqui você pode pedir para o jogador comprar o Game Pass através de uma interface de compra do Roblox
