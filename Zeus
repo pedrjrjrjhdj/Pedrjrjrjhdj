@@ -1,3 +1,18 @@
+local player = game.Players.LocalPlayer
+local button = script.Parent  -- O quadrado (part) onde o jogador vai clicar
+local menu = game.Players.LocalPlayer.PlayerGui:WaitForChild("ScreenGui"):WaitForChild("Frame")  -- Menu (Frame) onde os botões estão
+
+local clickDetector = button:FindFirstChild("ClickDetector")
+
+-- Função para alternar a visibilidade do menu
+local function toggleMenu()
+    menu.Visible = not menu.Visible  -- Alterna a visibilidade do menu
+end
+
+-- Detecta o clique no quadrado
+if clickDetector then
+    clickDetector.MouseClick:Connect(toggleMenu)
+end
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 -- Função para aplicar o costume
