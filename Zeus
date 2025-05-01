@@ -1,38 +1,43 @@
 repeat wait() until game:IsLoaded()
 
-local Lighting = game:GetService("Lighting")
 local HttpService = game:GetService("HttpService")
-local TPS = game:GetService("TeleportService")
+local TeleportService = game:GetService("TeleportService")
 local Players = game:GetService("Players")
+local Lighting = game:GetService("Lighting")
 
--- Verifica se é lua cheia e noite ainda no começo
-local function isFullMoonStarting()
-	local moon = Lighting:FindFirstChild("Sky"):GetAttribute("MoonPhase")
-	local time = tonumber(Lighting.ClockTime)
-	return moon == "FullMoon" and time >= 18 and time <= 19.5
+-- Verifica se a lua cheia está começando
+local function IsFullMoonStarting()
+    local sky = Lighting:FindFirstChild("Sky")
+    if not sky then return false end
+
+    local moon = sky:GetAttribute("MoonPhase")
+    local time = Lighting.ClockTime
+
+    return moon == "FullMoon" and time >= 18 and time <= 19.5
 end
 
--- Server hop
-local function serverHop()
-	local req = syn and syn.request or http_request or request
-	local body = req({
-		Url = "https://games.roblox.com/v1/games/2753915549/servers/Public?sortOrder=Desc&limit=100",
-		Method = "GET"
-	})
-	local data = HttpService:JSONDecode(body.Body)
+-- Função de server hop
+local function HopServer()
+    local req = (syn and syn.request) or request or http_request
+    local servers = {}
+    local res = req({
+        Url = "https://games.roblox.com/v1/games/2753915549/servers/Public?sortOrder=Asc&limit=100",
+        Method = "GET"
+    })
 
-	for _, v in pairs(data.data) do
-		if v.playing < v.maxPlayers then
-			TPS:TeleportToPlaceInstance(game.PlaceId, v.id, Players.LocalPlayer)
-			wait(3)
-		end
-	end
+    local data = HttpService:JSONDecode(res.Body)
+    for _, server in pairs(data.data) do
+        if server.playing < server.maxPlayers and server.id ~= game.JobId then
+            TeleportService:TeleportToPlaceInstance(game.PlaceId, server.id, Players.LocalPlayer)
+            wait(3)
+        end
+    end
 end
 
--- Início
-if isFullMoonStarting() then
-	warn("Lua cheia visível e recém-começada! Aproveita!")
+-- Loop principal
+if IsFullMoonStarting() then
+    warn("Lua cheia começou! Corre pro templo.")
 else
-	warn("Lua cheia não no início. Hoppando...")
-	serverHop()
+    warn("Ainda não é lua cheia... trocando de servidor.")
+    HopServer()
 end
