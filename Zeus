@@ -1,50 +1,38 @@
 repeat wait() until game:IsLoaded()
+
+local Lighting = game:GetService("Lighting")
 local HttpService = game:GetService("HttpService")
-local TeleportService = game:GetService("TeleportService")
+local TPS = game:GetService("TeleportService")
 local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-local PlaceID = game.PlaceId
 
-getgenv().FullMoonHop = true
-
--- Função para checar lua cheia
-local function isFullMoon()
-    local moon = workspace:FindFirstChild("Moon")
-    if moon and moon:FindFirstChild("MoonTexture") then
-        local tex = moon.MoonTexture.Texture
-        return tex:match("FullMoon") ~= nil or tex:lower():find("full")
-    end
-    return false
+-- Verifica se é lua cheia e noite ainda no começo
+local function isFullMoonStarting()
+	local moon = Lighting:FindFirstChild("Sky"):GetAttribute("MoonPhase")
+	local time = tonumber(Lighting.ClockTime)
+	return moon == "FullMoon" and time >= 18 and time <= 19.5
 end
 
--- Função de server hop
-local function hopServer()
-    local success, servers = pcall(function()
-        return HttpService:JSONDecode(game:HttpGet(
-            "https://games.roblox.com/v1/games/" .. PlaceID .. "/servers/Public?sortOrder=Asc&limit=100"
-        ))
-    end)
+-- Server hop
+local function serverHop()
+	local req = syn and syn.request or http_request or request
+	local body = req({
+		Url = "https://games.roblox.com/v1/games/2753915549/servers/Public?sortOrder=Desc&limit=100",
+		Method = "GET"
+	})
+	local data = HttpService:JSONDecode(body.Body)
 
-    if success and servers.data then
-        for _, server in pairs(servers.data) do
-            if server.playing < server.maxPlayers then
-                TeleportService:TeleportToPlaceInstance(PlaceID, server.id, LocalPlayer)
-                wait(3)
-            end
-        end
-    end
+	for _, v in pairs(data.data) do
+		if v.playing < v.maxPlayers then
+			TPS:TeleportToPlaceInstance(game.PlaceId, v.id, Players.LocalPlayer)
+			wait(3)
+		end
+	end
 end
 
--- Loop de detecção e troca
-while getgenv().FullMoonHop do
-    wait(2)
-    if isFullMoon() then
-        warn("Lua cheia encontrada!")
-        break
-    else
-        warn("Lua não é cheia. Trocando de servidor...")
-        hopServer()
-        wait(8)
-    end
+-- Início
+if isFullMoonStarting() then
+	warn("Lua cheia visível e recém-começada! Aproveita!")
+else
+	warn("Lua cheia não no início. Hoppando...")
+	serverHop()
 end
-                
