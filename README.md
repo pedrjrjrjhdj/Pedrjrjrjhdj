@@ -1,28 +1,22 @@
 repeat task.wait() until game:IsLoaded()
 
-local TeleportService = game:GetService("TeleportService")
-local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
 local Lighting = game:GetService("Lighting")
-local LocalPlayer = Players.LocalPlayer
+local TeleportService = game:GetService("TeleportService")
+local HttpService = game:GetService("HttpService")
 
+local LocalPlayer = Players.LocalPlayer
 local PlaceId = game.PlaceId
 local visitedServers = {}
 
--- Função para verificar se a lua é cheia
+-- Detecta lua cheia pela textura da lua
 local function IsFullMoon()
-    for _, obj in pairs(Lighting:GetChildren()) do
+    for _, obj in ipairs(Lighting:GetChildren()) do
         if obj:IsA("Sky") and obj.MoonTexture then
             return string.find(obj.MoonTexture:lower(), "full") ~= nil
         end
     end
     return false
-end
-
--- Verifica se a lua está no início (nascendo)
-local function IsMoonJustStarting()
-    local moonDir = Lighting:GetMoonDirection()
-    return moonDir.Y > 0.1 and moonDir.Y < 0.35
 end
 
 -- Teleporta para o templo
@@ -34,16 +28,16 @@ local function TeleportToTemple()
     end
 end
 
--- Teleporta para outro servidor aleatório
+-- Pega e entra em outro servidor aleatório não visitado
 local function HopServer()
-    local success, servers = pcall(function()
+    local success, result = pcall(function()
         return HttpService:JSONDecode(game:HttpGet(
             "https://games.roblox.com/v1/games/" .. PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"
         ))
     end)
 
-    if success and servers and servers.data then
-        for _, server in pairs(servers.data) do
+    if success and result and result.data then
+        for _, server in ipairs(result.data) do
             if server.playing < server.maxPlayers and not visitedServers[server.id] then
                 visitedServers[server.id] = true
                 TeleportService:TeleportToPlaceInstance(PlaceId, server.id, LocalPlayer)
@@ -61,15 +55,15 @@ end
 while true do
     task.wait(1)
 
-    if IsFullMoon() and IsMoonJustStarting() then
-        warn("Lua cheia começando detectada! Indo para o templo.")
+    if IsFullMoon() then
+        warn("Lua cheia detectada! Indo para o templo.")
         task.wait(1)
         TeleportToTemple()
         break
     else
-        warn("Lua não está começando. Trocando de servidor...")
+        warn("Sem lua cheia. Trocando de servidor...")
         task.wait(2)
         HopServer()
-        break
+        break -- necessário para não continuar o loop após teleport
     end
 end
