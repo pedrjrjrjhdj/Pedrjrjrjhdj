@@ -21,10 +21,14 @@ local function digTomb(tombstone)
     end
 end
 
--- Função para verificar se o baú tem o Cálice Sagrado
+-- Função para verificar se o baú tem o Cálice Sagrado e teleportar para ele
 local function openChest(chest)
     if chest and chest.Name == "Chest" then
+        -- Checa se o baú contém o Cálice
         if chest:FindFirstChild("Holy Chalice") then
+            -- Teleporta o jogador até o baú
+            LocalPlayer.Character.HumanoidRootPart.CFrame = chest.CFrame + Vector3.new(0, 3, 0)
+            wait(0.5)  -- Aguarda o jogador chegar no baú
             chest:Activate()
             print("Cálice Sagrado encontrado e baú aberto!")
             return true
