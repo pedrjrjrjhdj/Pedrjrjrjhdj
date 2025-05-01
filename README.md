@@ -1,98 +1,42 @@
-repeat wait() until game:IsLoaded()
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Players = game:GetService("Players")
+repeat task.wait() until game:IsLoaded()
+
 local TeleportService = game:GetService("TeleportService")
-local HttpService = game:GetService("HttpService")
-local LocalPlayer = Players.LocalPlayer
-local Workspace = game:GetService("Workspace")
-local PlaceID = game.PlaceId
+local Lighting = game:GetService("Lighting")
+local Players = game:GetService("Players")
+local Player = Players.LocalPlayer
+local PlaceId = game.PlaceId
 
--- Função para verificar se o jogador tem a Holy Torch
-local function hasHolyTorch()
-    return LocalPlayer.Backpack:FindFirstChild("Holy Torch") or LocalPlayer.Character:FindFirstChild("Holy Torch")
-end
-
--- Função para cavar nos túmulos com a Holy Torch
-local function digTomb(tombstone)
-    if tombstone and tombstone:IsA("BasePart") then
-        LocalPlayer.Character.HumanoidRootPart.CFrame = tombstone.CFrame + Vector3.new(0, 3, 0)
-        wait(0.5)
-        ReplicatedStorage.Remotes.Dig:FireServer(tombstone)
-    end
-end
-
--- Função para verificar se o baú tem o Cálice Sagrado e teleportar para ele
-local function openChest(chest)
-    if chest and chest.Name == "Chest" then
-        -- Checa se o baú contém o Cálice
-        if chest:FindFirstChild("Holy Chalice") then
-            -- Teleporta o jogador até o baú
-            LocalPlayer.Character.HumanoidRootPart.CFrame = chest.CFrame + Vector3.new(0, 3, 0)
-            wait(0.5)  -- Aguarda o jogador chegar no baú
-            chest:Activate()
-            print("Cálice Sagrado encontrado e baú aberto!")
-            return true
+-- Detecta se é lua cheia olhando o nome da textura da lua
+local function IsFullMoon()
+    for _, v in pairs(Lighting:GetChildren()) do
+        if v:IsA("Sky") then
+            if v.MoonTexture and typeof(v.MoonTexture) == "string" then
+                return string.find(v.MoonTexture:lower(), "full") ~= nil
+            end
         end
     end
     return false
 end
 
--- Função de Server Hop
-local function hopServer()
-    local success, servers = pcall(function()
-        return HttpService:JSONDecode(game:HttpGet(
-            "https://games.roblox.com/v1/games/" .. PlaceID .. "/servers/Public?sortOrder=Asc&limit=100"
-        ))
-    end)
-
-    if success and servers.data then
-        for _, server in pairs(servers.data) do
-            if server.playing < server.maxPlayers then
-                TeleportService:TeleportToPlaceInstance(PlaceID, server.id, LocalPlayer)
-                wait(3)
-                print("Trocando de servidor...")
-                break
-            end
-        end
+-- Teleporta até o templo
+local function TeleportToTemple()
+    local templeCFrame = CFrame.new(-5058, 314, -3156)
+    if Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") then
+        Player.Character.HumanoidRootPart.CFrame = templeCFrame
     end
 end
 
--- Loop de busca pelo baú e server hop
+-- Loop até achar lua cheia
 while true do
-    wait(2)
-
-    -- Verifica se o jogador possui a Holy Torch
-    if hasHolyTorch() then
-        local foundCalyx = false
-
-        -- Percorre os túmulos no Haunted Castle
-        for _, tombstone in pairs(Workspace:GetDescendants()) do
-            if tombstone:IsA("BasePart") and tombstone.Name == "Gravestone" then
-                -- Tenta cavar o túmulo
-                digTomb(tombstone)
-                wait(2)
-
-                -- Procura pelo baú próximo
-                for _, chest in pairs(Workspace:GetDescendants()) do
-                    if openChest(chest) then
-                        foundCalyx = true
-                        break
-                    end
-                end
-            end
-            if foundCalyx then break end
-        end
-
-        -- Se não encontrou o cálice, realiza Server Hop
-        if not foundCalyx then
-            print("Cálice não encontrado. Tentando outro servidor...")
-            hopServer()
-            wait(5)  -- Aguarda o servidor carregar
-        else
-            break  -- Sai do loop se o cálice foi encontrado
-        end
-    else
-        print("Você não possui a Holy Torch.")
+    if IsFullMoon() then
+        warn("Lua cheia detectada!")
+        task.wait(2)
+        TeleportToTemple()
         break
+    else
+        warn("Sem lua cheia... trocando de servidor.")
+        task.wait(2)
+        TeleportService:Teleport(PlaceId, Player)
+        break -- Importante: quebra o loop, senão ele continua rodando após o teleport
     end
 end
