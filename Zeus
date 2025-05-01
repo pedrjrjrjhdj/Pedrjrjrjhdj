@@ -9,9 +9,15 @@ local RunService = game:GetService("RunService")
 local Player = Players.LocalPlayer
 local PlaceId = game.PlaceId
 
--- Verifica se é lua cheia
+-- Função para verificar lua cheia (ajustada para exemplo)
 local function IsFullMoon()
-    return Lighting:FindFirstChild("FullMoon") and Lighting.FullMoon.Value
+    -- Caso o FullMoon não exista, tentamos verificar uma condição alternativa, como a hora do jogo
+    if Lighting:FindFirstChild("FullMoon") then
+        return Lighting.FullMoon.Value
+    end
+    -- Aqui podemos simular ou verificar outro critério, como um horário específico para a lua cheia
+    local currentTime = tick() % 24  -- Usamos um valor fictício de tempo, ajustável conforme o jogo
+    return currentTime > 20 or currentTime < 6 -- Supondo que entre 20h e 6h seja a "lua cheia"
 end
 
 -- Teleporta para o templo se lua cheia
@@ -32,7 +38,16 @@ while true do
     else
         warn("Sem lua cheia... trocando de servidor.")
         task.wait(2)
-        TeleportService:Teleport(PlaceId, Player)
+        
+        -- Tentando teleportar de forma mais robusta
+        local success, errorMsg = pcall(function()
+            TeleportService:Teleport(PlaceId, Player)
+        end)
+        
+        if not success then
+            warn("Erro ao tentar trocar de servidor: " .. errorMsg)
+        end
+        
         task.wait(10)
     end
 end
