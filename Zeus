@@ -1,60 +1,38 @@
--- Aguarda o jogo carregar
-repeat wait() until game:IsLoaded()
+-- Espera o jogo carregar
+repeat task.wait() until game:IsLoaded()
 
 -- Serviços
-local HttpService = game:GetService("HttpService")
 local TeleportService = game:GetService("TeleportService")
+local Lighting = game:GetService("Lighting")
 local Players = game:GetService("Players")
-
--- Variáveis
+local RunService = game:GetService("RunService")
 local Player = Players.LocalPlayer
 local PlaceId = game.PlaceId
-local JobIdAtual = game.JobId
 
--- Função para verificar se é lua cheia
+-- Verifica se é lua cheia
 local function IsFullMoon()
-    local Lighting = game:GetService("Lighting")
     return Lighting:FindFirstChild("FullMoon") and Lighting.FullMoon.Value
 end
 
--- Função para pegar servidores públicos
-local function GetPublicServers()
-    local cursor = ""
-    local servers = {}
-
-    while true do
-        local url = "https://games.roblox.com/v1/games/" .. PlaceId .. "/servers/Public?limit=100" .. (cursor ~= "" and "&cursor=" .. cursor or "")
-        local success, response = pcall(function()
-            return HttpService:JSONDecode(game:HttpGet(url))
-        end)
-        if success and response and response.data then
-            for _, server in ipairs(response.data) do
-                if server.playing < server.maxPlayers and server.id ~= JobIdAtual then
-                    table.insert(servers, server.id)
-                end
-            end
-            if response.nextPageCursor then
-                cursor = response.nextPageCursor
-            else
-                break
-            end
-        else
-            break
-        end
+-- Teleporta para o templo se lua cheia
+local function TeleportToTemple()
+    local templeCFrame = CFrame.new(-5058, 314, -3156) -- Local do templo
+    if Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") then
+        Player.Character.HumanoidRootPart.CFrame = templeCFrame
     end
-
-    return servers
 end
 
--- Se já for lua cheia, só avisar
-if IsFullMoon() then
-    warn("Lua cheia encontrada!")
-else
-    -- Caso não seja, procura outro servidor
-    local servidores = GetPublicServers()
-    for _, id in ipairs(servidores) do
-        wait(2) -- evita erro de teleport em mobile
-        TeleportService:TeleportToPlaceInstance(PlaceId, id)
-        wait(5)
+-- Loop de hop até lua cheia
+while true do
+    if IsFullMoon() then
+        warn("Lua cheia detectada!")
+        task.wait(2)
+        TeleportToTemple()
+        break
+    else
+        warn("Sem lua cheia... trocando de servidor.")
+        task.wait(2)
+        TeleportService:Teleport(PlaceId, Player)
+        task.wait(10)
     end
 end
