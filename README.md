@@ -1,24 +1,33 @@
-repeat task.wait() until game:IsLoaded()
+-- Lista de frutas míticas
+local frutasMiticas = {
+    "Leopard", "Dragon", "Spirit", "Dough", "Venom", "Control"
+}
 
-local Lighting = game:GetService("Lighting")
-
-local function IsFullMoon()
-    for _, obj in ipairs(Lighting:GetChildren()) do
-        if obj:IsA("Sky") and obj.MoonTexture then
-            return string.find(obj.MoonTexture:lower(), "full") ~= nil
+-- Checa se é fruta mítica
+local function IsMitica(nome)
+    for _, fruta in pairs(frutasMiticas) do
+        if string.find(nome:lower(), fruta:lower()) then
+            return true
         end
     end
     return false
 end
 
-if IsFullMoon() then
-    warn("Lua cheia detectada! Indo para o templo.")
-    local Players = game:GetService("Players")
-    local Player = Players.LocalPlayer
-    local templeCFrame = CFrame.new(-5058, 314, -3156)
-    if Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") then
-        Player.Character.HumanoidRootPart.CFrame = templeCFrame
+-- Loop que detecta frutas no chão
+while true do
+    task.wait(1)
+    for _, obj in pairs(game:GetService("Workspace"):GetChildren()) do
+        if obj:IsA("Tool") and string.find(obj.Name:lower(), "fruit") then
+            if IsMitica(obj.Name) then
+                warn("Fruta MÍTICA encontrada: " .. obj.Name)
+                local hrp = game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                if hrp and obj:FindFirstChild("Handle") then
+                    hrp.CFrame = obj.Handle.CFrame + Vector3.new(0, 2, 0)
+                end
+                return -- para o script após pegar
+            else
+                warn("Fruta comum detectada: " .. obj.Name .. " (ignorando)")
+            end
+        end
     end
-else
-    warn("Não é lua cheia! Troque de servidor manualmente.")
 end
