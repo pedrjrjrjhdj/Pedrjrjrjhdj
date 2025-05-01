@@ -5,47 +5,47 @@ local TeleportService = game:GetService("TeleportService")
 local Players = game:GetService("Players")
 local Lighting = game:GetService("Lighting")
 
--- Verifica se é lua cheia e começo da noite
+-- Detectar lua cheia no início da noite
 local function IsFullMoonStarting()
-	local sky = Lighting:FindFirstChild("Sky")
-	if not sky then return false end
-
-	local moon = sky:GetAttribute("MoonPhase")
-	local time = Lighting.ClockTime
-	return moon == "FullMoon" and time >= 18 and time <= 19.5
+    local sky = Lighting:FindFirstChild("Sky")
+    local time = Lighting.ClockTime
+    return sky and sky:GetAttribute("MoonPhase") == "FullMoon" and time >= 18 and time <= 19.5
 end
 
--- Server hop compatível
+-- Server Hop
 local function HopServer()
-	local success, result = pcall(function()
-		local req = (syn and syn.request) or (http_request) or (request)
-		return req({
-			Url = "https://games.roblox.com/v1/games/2753915549/servers/Public?sortOrder=Asc&limit=100",
-			Method = "GET"
-		})
-	end)
+    local req = (syn and syn.request) or (http_request) or (request)
+    if not req then
+        warn("Seu executor não suporta 'request'. Server hop não vai funcionar.")
+        return
+    end
 
-	if not success or not result or not result.Body then
-		warn("Erro ao buscar servidores. Seu executor pode não suportar 'request()'.")
-		return
-	end
+    local success, response = pcall(function()
+        return req({
+            Url = "https://games.roblox.com/v1/games/2753915549/servers/Public?sortOrder=Asc&limit=100",
+            Method = "GET"
+        })
+    end)
 
-	local data = HttpService:JSONDecode(result.Body)
+    if not success or not response then
+        warn("Erro ao buscar servidores.")
+        return
+    end
 
-	for _, server in pairs(data.data) do
-		if server.playing < server.maxPlayers and server.id ~= game.JobId then
-			warn("Hop para servidor:", server.id)
-			TeleportService:TeleportToPlaceInstance(game.PlaceId, server.id, Players.LocalPlayer)
-			wait(3)
-			break
-		end
-	end
+    local servers = HttpService:JSONDecode(response.Body)
+    for _, server in ipairs(servers.data) do
+        if server.playing < server.maxPlayers and server.id ~= game.JobId then
+            warn("Teleportando para servidor com ID:", server.id)
+            TeleportService:TeleportToPlaceInstance(game.PlaceId, server.id)
+            break
+        end
+    end
 end
 
--- Executar
+-- Principal
 if IsFullMoonStarting() then
-	warn("Lua cheia no começo! Faça o Trial!")
+    print("Lua cheia começando! Vá para o templo.")
 else
-	warn("Lua cheia não detectada, hoppando servidor...")
-	HopServer()
+    print("Lua não detectada. Procurando outro servidor...")
+    HopServer()
 end
