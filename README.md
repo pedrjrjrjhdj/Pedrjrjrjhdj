@@ -1,74 +1,84 @@
+repeat wait() until game:IsLoaded()
+
 local TeleportService = game:GetService("TeleportService")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
+local HttpService = game:GetService("HttpService")
 local PlaceId = game.PlaceId
-local workspace = game:GetService("Workspace")
 
--- Nomes exatos dos bosses
-local bossNames = {
-    "rip_indra True Form",
-    "Dough King"
-}
+-- Lista de servidores já visitados
+local serverHistory = {}
+local hopDelay = 10 -- segundos entre hops
 
--- Função para normalizar texto (sem acento, minúsculo, sem espaços extras)
-local function normalize(txt)
-    return txt:lower():gsub("%s+", "") -- remove espaços e põe minúsculo
+-- Função para salvar o ID do servidor atual
+local function addServerToHistory()
+    if not isfile("hop-history.json") then
+        writefile("hop-history.json", "[]")
+    end
+
+    local data = HttpService:JSONDecode(readfile("hop-history.json"))
+    table.insert(data, game.JobId)
+    writefile("hop-history.json", HttpService:JSONEncode(data))
+    serverHistory = data
 end
 
--- Verifica se algum boss está vivo
-local function bossIsAlive()
-    for _, v in pairs(workspace.Enemies:GetChildren()) do
-        local enemyName = normalize(v.Name)
-        for _, bossName in pairs(bossNames) do
-            if enemyName:find(normalize(bossName)) then
-                warn("Boss encontrado:", v.Name)
-                return true
-            end
+-- Função para verificar se já visitou o servidor
+local function alreadyVisited(jobId)
+    for _, id in pairs(serverHistory) do
+        if id == jobId then
+            return true
         end
     end
     return false
 end
 
--- Função para trocar de servidor
-local function serverHop()
-    -- Vamos tentar teleportar para um servidor aleatório
-    local servers = {}
-    local url = "https://games.roblox.com/v1/games/"..PlaceId.."/servers/Public?limit=100"
+-- Inicia histórico
+addServerToHistory()
 
-    local success, response = pcall(function()
-        return game:HttpGet(url)
+-- Função de server hop aleatório
+local function serverHop()
+    local servers = {}
+    local success, result = pcall(function()
+        return HttpService:JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/"..PlaceId.."/servers/Public?limit=100"))
     end)
 
     if success then
-        local responseData = game:GetService("HttpService"):JSONDecode(response)
-        for _, server in pairs(responseData.data) do
-            -- Só pega servidores que não estão cheios
-            if server.playing < server.maxPlayers then
+        for _, server in pairs(result.data) do
+            if server.playing < server.maxPlayers and not alreadyVisited(server.id) then
                 table.insert(servers, server.id)
             end
         end
 
         if #servers > 0 then
-            local selectedServer = servers[math.random(1, #servers)]
-            warn("Trocando para servidor com ID: " .. selectedServer)
-            TeleportService:TeleportToPlaceInstance(PlaceId, selectedServer, LocalPlayer)
+            local chosen = servers[math.random(1, #servers)]
+            print("Teleportando para novo servidor:", chosen)
+            TeleportService:TeleportToPlaceInstance(PlaceId, chosen, LocalPlayer)
         else
-            warn("Nenhum servidor disponível encontrado.")
+            print("Nenhum servidor novo encontrado.")
         end
     else
-        warn("Erro ao tentar buscar servidores.")
+        print("Erro ao buscar servidores:", result)
     end
 end
 
--- Loop principal
+-- Loop de hop contínuo (você pode trocar a condição abaixo)
 while true do
-    wait(5)
-    if not bossIsAlive() then
-        warn("Nenhum boss encontrado, fazendo hop.")
-        serverHop()
-        wait(15)  -- Aguarda antes de tentar novamente
-    else
-        warn("Boss ativo encontrado. Parando o script.")
+    wait(hopDelay)
+
+    -- Aqui você pode colocar qualquer verificação. Exemplo:
+    local foundBoss = false
+    for _, v in pairs(workspace.Enemies:GetChildren()) do
+        if v.Name:find("rip_indra") or v.Name:find("Dough King") then
+            foundBoss = true
+            break
+        end
+    end
+
+    if foundBoss then
+        print("Boss encontrado, parando script.")
         break
+    else
+        print("Boss não encontrado, trocando de servidor.")
+        serverHop()
     end
 end
