@@ -1,10 +1,8 @@
--- Server Hop com verificação de bosses pelos nomes exatos fornecidos
-
-local HttpService = game:GetService("HttpService")
 local TeleportService = game:GetService("TeleportService")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local PlaceId = game.PlaceId
+local workspace = game:GetService("Workspace")
 
 -- Nomes exatos dos bosses
 local bossNames = {
@@ -33,23 +31,21 @@ end
 
 -- Função para trocar de servidor
 local function serverHop()
-    local servers = {}
-    local url = "https://games.roblox.com/v1/games/"..PlaceId.."/servers/Public?limit=100"
+    local servers = game:GetService("TeleportService"):GetPlaceInstances(PlaceId)
+    local validServers = {}
 
-    local success, response = pcall(function()
-        return HttpService:JSONDecode(game:HttpGet(url))
-    end)
-
-    if success and response and response.data then
-        for _, server in pairs(response.data) do
-            if server.playing < server.maxPlayers then
-                table.insert(servers, server.id)
-            end
+    for _, server in pairs(servers) do
+        if server.playing < server.maxPlayers then
+            table.insert(validServers, server.id)
         end
+    end
 
-        if #servers > 0 then
-            TeleportService:TeleportToPlaceInstance(PlaceId, servers[math.random(1, #servers)], LocalPlayer)
-        end
+    if #validServers > 0 then
+        local serverToJoin = validServers[math.random(1, #validServers)]
+        warn("Trocando para o servidor: " .. serverToJoin)
+        TeleportService:TeleportToPlaceInstance(PlaceId, serverToJoin, LocalPlayer)
+    else
+        warn("Nenhum servidor disponível encontrado.")
     end
 end
 
@@ -59,7 +55,7 @@ while true do
     if not bossIsAlive() then
         warn("Nenhum boss encontrado, fazendo hop.")
         serverHop()
-        wait(15)
+        wait(15)  -- Aguarda antes de tentar novamente
     else
         warn("Boss ativo encontrado. Parando o script.")
         break
