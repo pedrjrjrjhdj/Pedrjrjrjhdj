@@ -31,21 +31,32 @@ end
 
 -- Função para trocar de servidor
 local function serverHop()
-    local servers = game:GetService("TeleportService"):GetPlaceInstances(PlaceId)
-    local validServers = {}
+    -- Vamos tentar teleportar para um servidor aleatório
+    local servers = {}
+    local url = "https://games.roblox.com/v1/games/"..PlaceId.."/servers/Public?limit=100"
 
-    for _, server in pairs(servers) do
-        if server.playing < server.maxPlayers then
-            table.insert(validServers, server.id)
+    local success, response = pcall(function()
+        return game:HttpGet(url)
+    end)
+
+    if success then
+        local responseData = game:GetService("HttpService"):JSONDecode(response)
+        for _, server in pairs(responseData.data) do
+            -- Só pega servidores que não estão cheios
+            if server.playing < server.maxPlayers then
+                table.insert(servers, server.id)
+            end
         end
-    end
 
-    if #validServers > 0 then
-        local serverToJoin = validServers[math.random(1, #validServers)]
-        warn("Trocando para o servidor: " .. serverToJoin)
-        TeleportService:TeleportToPlaceInstance(PlaceId, serverToJoin, LocalPlayer)
+        if #servers > 0 then
+            local selectedServer = servers[math.random(1, #servers)]
+            warn("Trocando para servidor com ID: " .. selectedServer)
+            TeleportService:TeleportToPlaceInstance(PlaceId, selectedServer, LocalPlayer)
+        else
+            warn("Nenhum servidor disponível encontrado.")
+        end
     else
-        warn("Nenhum servidor disponível encontrado.")
+        warn("Erro ao tentar buscar servidores.")
     end
 end
 
