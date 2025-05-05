@@ -1,38 +1,25 @@
-repeat wait() until game:IsLoaded()
+-- Auto Farm Boss Namu
+-- Ajuste as coordenadas e remotes conforme o jogo
 
-local Players = game:GetService("Players")
-local TeleportService = game:GetService("TeleportService")
-local LocalPlayer = Players.LocalPlayer
-local PlaceId = game.PlaceId
+local player = game.Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
 
--- Nomes dos bosses desejados
-local bossNames = {
-    "rip_indra True Form",
-    "Dough King"
-}
-
--- Função para verificar se algum boss está vivo
-local function bossAtivo()
-    for _, inimigo in pairs(workspace.Enemies:GetChildren()) do
-        for _, nome in pairs(bossNames) do
-            if inimigo.Name == nome then
-                warn("Boss encontrado:", nome)
-                return true
-            end
-        end
-    end
-    return false
+-- Função para atacar o boss
+function attackNamu()
+    local args = {
+        [1] = "AttackBoss", -- pode variar: "Hit", "UseSkill", etc.
+        [2] = "Namu" -- nome exato do boss
+    }
+    game:GetService("ReplicatedStorage").RemoteEvent:FireServer(unpack(args))
 end
 
--- Loop: verifica boss e faz hop
+-- Auto farm loop
 while true do
-    wait(5)
-    if bossAtivo() then
-        warn("Boss ativo no servidor! Parando o script.")
-        break
-    else
-        warn("Nenhum boss encontrado. Trocando de servidor...")
-        TeleportService:Teleport(PlaceId, LocalPlayer)
-        wait(10) -- tempo antes do próximo hop
-    end
+    wait(0.5)
+    
+    -- Teleporta para o boss Namu (substituir pelas coordenadas certas)
+    char:MoveTo(Vector3.new(500, 15, -300))
+    
+    -- Ataca o boss
+    attackNamu()
 end
